@@ -3,6 +3,21 @@
 
 import PackageDescription
 
+//-F/System/Library/PrivateFrameworks -framework IDS -Wl,-U,_OBJC_CLASS_$_IDSInternalQueueController -Wl,-U,_OBJC_CLASS_$__IDSAccount -Wl,-U,_OBJC_CLASS_$__IDSService -Wl,-U,_OBJC_CLASS_$__IDSConnection -Wl,-U,_OBJC_CLASS_$__IDSSession
+
+func weakClass(_ name: String) -> String {
+    "-Wl,-U,_OBJC_CLASS_$_\(name)"
+}
+
+let weakIDSClasses: [String] = [
+    "IDSInternalQueueController",
+    "_IDSAccount",
+    "_IDSService",
+    "_IDSConnection",
+    "_IDSService",
+    "_IDSSession"
+]
+
 let package = Package(
     name: "DistributedXPC",
     platforms: [
@@ -13,7 +28,8 @@ let package = Package(
         .library(
             name: "DistributedXPC",
             targets: ["DistributedXPC"]),
-        .executable(name: "test", targets: ["test"])
+        .executable(name: "test", targets: ["test"]),
+        .executable(name: "xpcidsd", targets: ["xpcidsd"])
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -30,5 +46,11 @@ let package = Package(
         .testTarget(
             name: "DistributedXPCTests",
             dependencies: ["DistributedXPC"]),
+        .executableTarget(name: "xpcidsd", dependencies: ["DistributedXPC", "IDS"]),
+        .target(name: "CIDS", linkerSettings: [
+            .unsafeFlags(["-F/System/Library/PrivateFrameworks", "-framework", "IDS", "-framework", "IDSFoundation"]),
+            .unsafeFlags(weakIDSClasses.map(weakClass(_:)))
+        ]),
+        .target(name: "IDS", dependencies: ["CIDS"])
     ]
 )
